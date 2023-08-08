@@ -1,6 +1,5 @@
 import os
 import shutil
-import concurrent.futures
 
 
 extensions = {
@@ -34,24 +33,27 @@ def sort_files_by_extension(src_folder, extensions):
                 dest_folder = os.path.join(src_folder, 'other')
             dest_file_path = os.path.join(dest_folder, filename)
             shutil.move(source_file_path, dest_file_path)
-
-
-def remove_empty_folders(root_folder):
-    for root, dirs, _ in os.walk(root_folder, topdown=False):
+            
+            
+def remove_empty_folders(src_folder):
+    for root, dirs, _ in os.walk(src_folder, topdown=False):
         for dir_name in dirs:
             dir_path = os.path.join(root, dir_name)
             if not os.listdir(dir_path):
                 os.rmdir(dir_path)
 
+                
+def process_subfolder(subfolder):
+    sort_files_by_extension(subfolder, extensions)
+
 
 def main():
     src_folder = "D:\dl_test"
     create_dest_folders(src_folder, extensions)
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.submit(sort_files_by_extension, src_folder, extensions)
-        executor.submit(remove_empty_folders, src_folder)
+    sort_files_by_extension(src_folder, extensions)
+    remove_empty_folders(src_folder)
 
 
 if __name__ == "__main__":
     main()
+
