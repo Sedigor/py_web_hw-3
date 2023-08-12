@@ -1,6 +1,6 @@
 import os
 import shutil
-from threading import *
+import concurrent.futures
 
 
 extensions = {
@@ -20,20 +20,27 @@ def create_dest_folders(src_folder, extensions):
             os.mkdir(new_folder_path)
 
 
-def sort_files_by_extension(src_folder, extensions):
-    for root, _, files in os.walk(src_folder):
+def sort_files_in_subfolder(subfolder, extensions):
+    for root, _, files in os.walk(subfolder):
         for filename in files:
             extension = filename.split('.')[-1]
             source_file_path = os.path.join(root, filename)
             dest_folder = None
             for k, v in extensions.items():
                 if extension.lower() in v:
-                    dest_folder = os.path.join(src_folder, k)
+                    dest_folder = os.path.join(subfolder, k)
                     break
             if dest_folder is None:
-                dest_folder = os.path.join(src_folder, 'other')
+                dest_folder = os.path.join(subfolder, 'other')
             dest_file_path = os.path.join(dest_folder, filename)
             shutil.move(source_file_path, dest_file_path)
+
+
+def sort_files_by_extension(src_folder, extensions):
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for root, subfolders, _ in os.walk(src_folder):
+            for subfolder in subfolders:
+                executor.submit(sort_files_in_subfolder, os.path.join(root, subfolder), extensions)
 
 
 def remove_empty_folders(root_folder):
@@ -42,13 +49,14 @@ def remove_empty_folders(root_folder):
             dir_path = os.path.join(root, dir_name)
             if not os.listdir(dir_path):
                 os.rmdir(dir_path)
-
-
+                
+                
 def main():
     src_folder = "D:\dl_test"
     create_dest_folders(src_folder, extensions)
+    sort_files_by_extension(src_folder, extensions)
+    remove_empty_folders(src_folder)
     
-
 
 if __name__ == "__main__":
     main()
